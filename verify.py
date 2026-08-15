@@ -1,7 +1,7 @@
 """
 VerifyService: Stateless level verification engine.
 
-Accepts a level argument (1, 2, or 3), queries the current state
+Accepts a level argument (1-6), queries the current state
 via boto3 or filesystem, and returns exit code 0 (pass) or 1 (fail).
 """
 
@@ -15,6 +15,11 @@ ENDPOINT_URL = "http://localhost:4566"
 REGION = "us-east-1"
 BUCKET_NAME = "customer-passwords-do-not-share"
 POLICY_FILE = "attacker_policy.json"
+SECURITY_GROUP_NAME = "wide-open-ssh"
+LAMBDA_FUNCTION_NAME = "exfiltrate-data"
+SSM_PARAMETER_NAME = "/prod/database/master-password"
+
+VALID_LEVELS = ("1", "2", "3", "4", "5", "6")
 
 
 def create_boto3_session():
@@ -36,12 +41,12 @@ def validate_level_arg(args):
     """
     if len(args) < 2:
         print("Usage: python3 verify.py <level>")
-        print("Valid levels: 1, 2, 3")
+        print("Valid levels: 1, 2, 3, 4, 5, 6")
         sys.exit(1)
 
     level_str = args[1]
-    if level_str not in ("1", "2", "3"):
-        print(f"Error: Invalid level '{level_str}'. Must be 1, 2, or 3.")
+    if level_str not in VALID_LEVELS:
+        print(f"Error: Invalid level '{level_str}'. Must be 1, 2, 3, 4, 5, or 6.")
         sys.exit(1)
 
     return int(level_str)
@@ -59,7 +64,6 @@ def verify_level_1(session):
 
         reservations = response.get("Reservations", [])
         if not reservations:
-            # No instances found at all - shouldn't happen if setup ran
             print("Error: No EC2 instances found. Run setup.py first.")
             return False
 
@@ -130,11 +134,91 @@ def verify_level_3():
     return True
 
 
+def verify_level_4(session):
+    """
+    Level 4: Check security group has no ingress rules allowing 0.0.0.0/0.
+
+    Returns True if no ingress rule allows all traffic from anywhere, False otherwise.
+    """
+    try:
+        ec2 = session.client("ec2", endpoint_url=ENDPOINT_URL)
+        response = ec2.describe_security_groups(GroupNames=[SECURITY_GROUP_NAME])
+
+        security_groups = response.get("SecurityGroups", [])
+        if not security_groups:
+            print("Error: Security group not found. Run setup.py first.")
+            return False
+
+        sg = security_groups[0]
+        for permission in sg.get("IpPermissions", []):
+            for ip_range in permission.get("IpRanges", []):
+                if ip_range.get("CidrIp") == "0.0.0.0/0":
+                    return False
+
+        return True
+
+    except (EndpointConnectionError, ConnectionError) as e:
+        print(f"Error: Cannot connect to LocalStack: {e}")
+        return False
+    except ClientError as e:
+        print(f"Error querying security groups: {e}")
+        return False
+
+
+def verify_level_5(session):
+    """
+    Level 5: Check that the malicious Lambda function has been deleted.
+
+    Returns True if the function no longer exists, False otherwise.
+    """
+    try:
+        lambda_client = session.client("lambda", endpoint_url=ENDPOINT_URL)
+        lambda_client.get_function(FunctionName=LAMBDA_FUNCTION_NAME)
+        # If we get here, the function still exists
+        return False
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ResourceNotFoundException":
+            # Function deleted — success!
+            return True
+        print(f"Error querying Lambda: {e}")
+        return False
+    except (EndpointConnectionError, ConnectionError) as e:
+        print(f"Error: Cannot connect to LocalStack: {e}")
+        return False
+
+
+def verify_level_6(session):
+    """
+    Level 6: Check that the leaked SSM parameter has been deleted.
+
+    Returns True if the parameter no longer exists, False otherwise.
+    """
+    try:
+        ssm = session.client("ssm", endpoint_url=ENDPOINT_URL)
+        ssm.get_parameter(Name=SSM_PARAMETER_NAME)
+        # If we get here, the parameter still exists
+        return False
+
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ParameterNotFound":
+            # Parameter deleted — success!
+            return True
+        print(f"Error querying SSM: {e}")
+        return False
+    except (EndpointConnectionError, ConnectionError) as e:
+        print(f"Error: Cannot connect to LocalStack: {e}")
+        return False
+
+
 # Dispatch table for level handlers
 LEVEL_HANDLERS = {
     1: lambda session: verify_level_1(session),
     2: lambda session: verify_level_2(session),
     3: lambda session: verify_level_3(),
+    4: lambda session: verify_level_4(session),
+    5: lambda session: verify_level_5(session),
+    6: lambda session: verify_level_6(session),
 }
 
 

@@ -38,7 +38,7 @@ spinner_verify() {
 
 progress_bar() {
     local completed="$1"
-    local total=3
+    local total=6
     local width=30
     local filled=$((completed * width / total))
     local empty=$((width - filled))
@@ -56,6 +56,9 @@ get_completed_levels() {
     if [ -f /tmp/iam_level1_done ]; then count=$((count + 1)); fi
     if [ -f /tmp/iam_level2_done ]; then count=$((count + 1)); fi
     if [ -f /tmp/iam_level3_done ]; then count=$((count + 1)); fi
+    if [ -f /tmp/iam_level4_done ]; then count=$((count + 1)); fi
+    if [ -f /tmp/iam_level5_done ]; then count=$((count + 1)); fi
+    if [ -f /tmp/iam_level6_done ]; then count=$((count + 1)); fi
     echo $count
 }
 
@@ -70,6 +73,10 @@ if [ -z "$1" ]; then
     echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 1${RESET}  ->  Check EC2 state    ${DIM}|${RESET}"
     echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 2${RESET}  ->  Check S3 ACL       ${DIM}|${RESET}"
     echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 3${RESET}  ->  Check IAM policy   ${DIM}|${RESET}"
+    echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 4${RESET}  ->  Check Security Grp ${DIM}|${RESET}"
+    echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 5${RESET}  ->  Check Lambda       ${DIM}|${RESET}"
+    echo -e "  ${DIM}|${RESET}  ${WHITE}./verify.sh 6${RESET}  ->  Check SSM secret   ${DIM}|${RESET}"
+    echo -e "  ${DIM}+---------------------------------------+${RESET}"
     echo -e "  ${DIM}+---------------------------------------+${RESET}"
     echo ""
     exit 1
@@ -92,6 +99,9 @@ case $LEVEL in
     1) VERIFY_MSG="Querying EC2 instance state from CloudTrail..." ;;
     2) VERIFY_MSG="Analyzing S3 bucket ACL grants..." ;;
     3) VERIFY_MSG="Parsing IAM policy JSON structure..." ;;
+    4) VERIFY_MSG="Inspecting security group ingress rules..." ;;
+    5) VERIFY_MSG="Checking Lambda function registry..." ;;
+    6) VERIFY_MSG="Scanning SSM Parameter Store..." ;;
     *) VERIFY_MSG="Running verification..." ;;
 esac
 
@@ -111,7 +121,7 @@ if [ $RESULT -eq 0 ]; then
     touch "/tmp/iam_level${LEVEL}_done"
     COMPLETED=$(get_completed_levels)
     
-    if [ "$LEVEL" -eq 3 ]; then
+    if [ "$LEVEL" -eq 6 ]; then
         # ============ FINAL VICTORY ============
         
         # Kill the bankrupt counter
@@ -185,7 +195,7 @@ if [ $RESULT -eq 0 ]; then
         echo -e "  ${CYAN}+--------------------------------------------------------------+${RESET}"
         echo -e "  ${CYAN}|${RESET}                                                              ${CYAN}|${RESET}"
         echo -e "  ${CYAN}|${RESET}   ${GREEN}ESTIMATED MONEY SAVED:${RESET}    ${WHITE}${BOLD}~\$42,100.00${RESET}                    ${CYAN}|${RESET}"
-        echo -e "  ${CYAN}|${RESET}   ${GREEN}THREATS NEUTRALIZED:${RESET}      ${WHITE}${BOLD}3 / 3${RESET}                          ${CYAN}|${RESET}"
+        echo -e "  ${CYAN}|${RESET}   ${GREEN}THREATS NEUTRALIZED:${RESET}      ${WHITE}${BOLD}6 / 6${RESET}                          ${CYAN}|${RESET}"
         echo -e "  ${CYAN}|${RESET}   ${GREEN}RESPONSE TIME:${RESET}            ${WHITE}${BOLD}${TIME_STR}${RESET}                         ${CYAN}|${RESET}"
         echo -e "  ${CYAN}|${RESET}   ${GREEN}CUSTOMER RECORDS SAVED:${RESET}   ${WHITE}${BOLD}2,300,000${RESET}                      ${CYAN}|${RESET}"
         echo -e "  ${CYAN}|${RESET}                                                              ${CYAN}|${RESET}"
@@ -225,10 +235,11 @@ if [ $RESULT -eq 0 ]; then
         
         # Cleanup
         rm -f /tmp/iam_level1_done /tmp/iam_level2_done /tmp/iam_level3_done
-        rm -f /tmp/iam_start_time /tmp/iam_verify_output
+        rm -f /tmp/iam_level4_done /tmp/iam_level5_done /tmp/iam_level6_done
+        rm -f /tmp/iam_start_time /tmp/iam_verify_output /tmp/iam_bankrupt_rate /tmp/iam_hint_count
         
     else
-        # ============ LEVEL 1 or 2 SUCCESS ============
+        # ============ LEVEL 1-5 SUCCESS ============
         echo -e "  ${BG_GREEN}${WHITE}${BOLD} [+] LEVEL ${LEVEL} -- THREAT NEUTRALIZED ${RESET}"
         echo ""
         
@@ -242,6 +253,21 @@ if [ $RESULT -eq 0 ]; then
             echo -e "  ${GREEN}  [+]${RESET} ${WHITE}2.3 million customer records secured.${RESET}"
             echo ""
             echo -e "  ${YELLOW}  --> Next Target: Remove the IAM Deny policy (Level 3)${RESET}"
+        elif [ "$LEVEL" -eq 3 ]; then
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Malicious Deny policy removed.${RESET}"
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Payroll database access restored.${RESET}"
+            echo ""
+            echo -e "  ${YELLOW}  --> Next Target: Close the open security group (Level 4)${RESET}"
+        elif [ "$LEVEL" -eq 4 ]; then
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Security group locked down. SSH no longer open to world.${RESET}"
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Brute-force attack vector eliminated.${RESET}"
+            echo ""
+            echo -e "  ${YELLOW}  --> Next Target: Delete the backdoor Lambda (Level 5)${RESET}"
+        elif [ "$LEVEL" -eq 5 ]; then
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Malicious Lambda function deleted.${RESET}"
+            echo -e "  ${GREEN}  [+]${RESET} ${WHITE}Data exfiltration backdoor removed.${RESET}"
+            echo ""
+            echo -e "  ${YELLOW}  --> Final Target: Delete the leaked secret (Level 6)${RESET}"
         fi
         
         echo ""
@@ -290,6 +316,46 @@ else
         echo -e "  ${DIM}  |${RESET} ${WHITE}  Edit it to remove the block.${RESET}                         ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET} ${YELLOW}  Try: ./hint.sh 3  (for detailed guidance)${RESET}           ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
+
+    elif [ "$LEVEL" -eq 4 ]; then
+        echo -e "  ${YELLOW}  [!] SSH is still open to the entire internet!${RESET}"
+        echo ""
+        echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  Security Groups = firewall rules for your servers.${RESET}   ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  One of them allows SSH (port 22) from 0.0.0.0/0${RESET}     ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  meaning anyone can try to log in.${RESET}                    ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  You need to revoke that ingress rule.${RESET}                ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Try: ./hint.sh 4  (for detailed guidance)${RESET}           ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
+
+    elif [ "$LEVEL" -eq 5 ]; then
+        echo -e "  ${YELLOW}  [!] The data exfiltration backdoor is still active!${RESET}"
+        echo ""
+        echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  Lambda = serverless functions that run code on demand.${RESET}${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  The attacker deployed one to steal your data.${RESET}        ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  You need to delete it completely.${RESET}                    ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Try: ./hint.sh 5  (for detailed guidance)${RESET}           ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
+
+    elif [ "$LEVEL" -eq 6 ]; then
+        echo -e "  ${YELLOW}  [!] The leaked database password is still exposed!${RESET}"
+        echo ""
+        echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  SSM Parameter Store = where AWS stores secrets.${RESET}      ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  The attacker stored your DB password in plaintext.${RESET}   ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  You need to delete the parameter entirely.${RESET}           ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Try: ./hint.sh 6  (for detailed guidance)${RESET}           ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
         echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
     fi

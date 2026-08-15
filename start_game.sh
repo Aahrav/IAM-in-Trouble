@@ -81,7 +81,8 @@ printf "${BG_BLUE}${WHITE}${BOLD}%-${COLS}s${RESET}" " [IAM IN TROUBLE]  ACTIVE 
 
 # Set the scroll region: rows 2 to bottom (row 0 = bar, row 1 = separator)
 # This makes ONLY rows 2..ROWS scroll. Row 0 stays fixed.
-printf "\033[2;${ROWS}r"
+# NOTE: Disabled to allow terminal scrollback (Shift+PgUp or mouse scroll)
+# printf "\033[2;${ROWS}r"
 
 # Move cursor to the scrollable area (row 2)
 tput cup 2 0
