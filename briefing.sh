@@ -115,8 +115,9 @@ box_bottom "$GREEN"
 echo ""
 
 # ---- Footer ----
-echo -e "  ${DIM}$(printf '%0.s-' $(seq 1 $W))${RESET}"
-echo -e "  ${DIM}The CFO is on Line 1. Legal is on Line 2.${RESET}"
-echo -e "  ${DIM}Board meets at 6 AM. You have one job: Make. This. Stop.${RESET}"
-echo -e "  ${DIM}$(printf '%0.s-' $(seq 1 $W))${RESET}"
+echo -e "  ${DIM}--------------------------------------------------------------${RESET}"
+echo -e "  ${DIM}  The CFO is on Line 1. Legal is on Line 2. Board meets at 6 AM.${RESET}"
+echo -e "  ${DIM}  You have one job: Make. This. Stop.${RESET}"
+echo -e "  ${WHITE}  Use your AWS CLI skills to identify the compromised instance.${RESET}"
+echo -e "  ${DIM}--------------------------------------------------------------${RESET}"
 echo ""

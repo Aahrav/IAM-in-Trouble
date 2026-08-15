@@ -19,6 +19,13 @@ rate_cents=75
 elapsed=0
 
 while true; do
+    # Read accelerated rate from hint system if available
+    if [ -f /tmp/iam_bankrupt_rate ]; then
+        rate_cents=$(cat /tmp/iam_bankrupt_rate)
+    fi
+    COLS=$(tput cols 2>/dev/null || echo 80)
+    
+    # Format values
     money=$(printf "\$%d.%02d" $dollars $cents)
     mins=$((elapsed / 60))
     secs=$((elapsed % 60))
