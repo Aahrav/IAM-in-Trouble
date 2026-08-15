@@ -92,7 +92,7 @@ def main():
     # Provision EC2
     try:
         instance_id = provision_ec2(session)
-        print(f"[+] EC2 crypto miner spawned: {instance_id} (p4d.24xlarge)")
+        print("[+] A rogue EC2 instance has been deployed... can you find it?")
     except (ClientError, Exception) as e:
         print(f"Error provisioning EC2: {e}")
         sys.exit(1)
@@ -110,7 +110,7 @@ def main():
     print(f"[+] Malicious policy written: {POLICY_FILE}")
 
     print("\n[✓] Game environment ready. The attacker has compromised your account!")
-    print(f"    Instance ID: {instance_id}")
+    print("    🔍 A crypto miner is running somewhere... use your AWS CLI skills to find it.")
     print(f"    Bucket: {BUCKET_NAME}")
     print(f"    Policy: {POLICY_FILE}")
 
