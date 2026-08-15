@@ -22,7 +22,7 @@ from hypothesis.strategies import (
 )
 
 # Add parent directory to path so we can import verify module
-sys.path.insert(0, "/home/aahrav/kiro-hack/iam-in-trouble")
+sys.path.insert(0, "/home/aahrav/kiro-hack")
 
 import verify
 

@@ -192,6 +192,18 @@ if [ $RESULT -eq 0 ]; then
         echo -e "  ${CYAN}+--------------------------------------------------------------+${RESET}"
         echo ""
         
+        # Grade based on elapsed time
+        if [ -f /tmp/iam_start_time ]; then
+            if [ $ELAPSED -lt 120 ]; then
+                echo -e "  ${GREEN}${BOLD}Grade: SENIOR SRE -- You crushed it!${RESET}"
+            elif [ $ELAPSED -lt 300 ]; then
+                echo -e "  ${YELLOW}${BOLD}Grade: JUNIOR SRE -- Not bad, room to improve.${RESET}"
+            else
+                echo -e "  ${RED}${BOLD}Grade: FIRED -- Too slow, the company went bankrupt.${RESET}"
+            fi
+            echo ""
+        fi
+        
         sleep 0.3
         
         # Promotion banner
@@ -245,39 +257,39 @@ else
         echo -e "  ${YELLOW}  [!] The crypto miner is still burning money!${RESET}"
         echo ""
         echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}1. Find the instance:${RESET}                                  ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}aws --endpoint-url=http://localhost:4566 \\${RESET}          ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}    ec2 describe-instances${RESET}                           ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}2. Terminate it:${RESET}                                       ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}aws --endpoint-url=http://localhost:4566 \\${RESET}          ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}    ec2 terminate-instances --instance-ids <ID>${RESET}      ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  How do you find what's running in your account?${RESET}      ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  Think: describe, then destroy.${RESET}                       ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Keywords: ec2, instances, terminate${RESET}                  ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Don't forget: --endpoint-url${RESET}                        ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
         echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
         
     elif [ "$LEVEL" -eq 2 ]; then
         echo -e "  ${YELLOW}  [!] Customer data is still publicly accessible!${RESET}"
         echo ""
         echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}Set the bucket ACL to private:${RESET}                         ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}aws --endpoint-url=http://localhost:4566 \\${RESET}          ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}    s3api put-bucket-acl \\${RESET}                          ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}    --bucket customer-passwords-do-not-share \\${RESET}      ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}    --acl private${RESET}                                    ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  The bucket is wide open. Who can read it?${RESET}            ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  You need to change who has access.${RESET}                   ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Keywords: s3api, bucket-acl, private${RESET}                 ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  The bucket name is in the briefing...${RESET}                ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
         echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
         
     elif [ "$LEVEL" -eq 3 ]; then
         echo -e "  ${YELLOW}  [!] The attacker's Deny rule is still blocking payroll!${RESET}"
         echo ""
         echo -e "  ${DIM}  +-- HINT ------------------------------------------------+${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}1. Open the policy file:${RESET}                               ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${CYAN}nano attacker_policy.json${RESET}                            ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}2. Find and DELETE the entire block with:${RESET}               ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET}    ${YELLOW}\"Effect\": \"Deny\"${RESET}                                      ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  The attacker left a policy file in this directory.${RESET}   ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${WHITE}  Something in it is blocking access. Remove it.${RESET}       ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${WHITE}3. Save (Ctrl+O, Enter, Ctrl+X in nano)${RESET}                ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Think: What \"Effect\" would block someone?${RESET}            ${DIM}|${RESET}"
+        echo -e "  ${DIM}  |${RESET} ${YELLOW}  Open it with any text editor. Keep it valid JSON.${RESET}    ${DIM}|${RESET}"
         echo -e "  ${DIM}  |${RESET}                                                         ${DIM}|${RESET}"
-        echo -e "  ${DIM}  |${RESET} ${RED}[!] Keep the file as valid JSON!${RESET}                        ${DIM}|${RESET}"
         echo -e "  ${DIM}  +-------------------------------------------------------+${RESET}"
     fi
     
