@@ -159,6 +159,96 @@ Implement a terminal-based AWS CLI escape room game with three security incident
 - [ ] 7. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 8. Implement Hint System with Cost
+  - [ ] 8.1 Create `hint.sh` script with level-based hints
+    - Create executable `hint.sh` that accepts a level number argument (1, 2, or 3)
+    - For level 1: print a hint about using `aws ec2 terminate-instances`
+    - For level 2: print a hint about using `aws s3api put-bucket-acl`
+    - For level 3: print a hint about editing `attacker_policy.json` to remove Deny statements
+    - If invalid or missing argument, print usage message and exit with code 1
+    - _Requirements: 5.2, 5.3 (extends Bankrupt Counter behavior)_
+
+  - [ ] 8.2 Implement Bankrupt Counter acceleration on hint usage
+    - Modify `start_game.sh` Bankrupt Counter to read a rate multiplier from a shared temp file (e.g., `/tmp/iam_bankrupt_rate`)
+    - Default rate: $50/sec increment; after each hint, rate increases (e.g., $50 → $200 → $500)
+    - In `hint.sh`, write the new accelerated rate to the shared temp file before displaying the hint
+    - The Bankrupt Counter loop should re-read the rate file each iteration to pick up changes dynamically
+    - _Requirements: 5.2, 5.3_
+
+  - [ ] 8.3 Add hint cost warning to hint output
+    - Before printing the hint text, display a warning in red ANSI text: "⚠️  WARNING: Asking for a hint accelerates your bankrupt rate!"
+    - After displaying the hint, print the new rate (e.g., "Bankrupt rate now: $200/sec")
+    - _Requirements: 5.3_
+
+- [ ] 9. Implement Instance ID Discovery (don't hand it to them)
+  - [ ] 9.1 Remove instance ID printout from `setup.py`
+    - Remove or comment out the line in `provision_ec2()` that prints the instance ID to stdout
+    - Instead, print a message like: "A rogue EC2 instance has been deployed... can you find it?"
+    - The instance ID should NOT be directly revealed to the player
+    - _Requirements: 1.2, 2.1_
+
+  - [ ] 9.2 Update `briefing.sh` narrative to hint at discovery
+    - Add a line to the briefing narrative instructing the player to discover the rogue instance themselves
+    - Include a hint like: "Use your AWS CLI skills to identify the compromised instance."
+    - Do NOT include the literal `describe-instances` command — the player must figure it out
+    - _Requirements: 6.3_
+
+  - [ ] 9.3 Update `verify.sh` Level 1 instructions to remove instance ID reference
+    - If `verify.sh` or `start_game.sh` currently prints the instance ID as part of level instructions, remove that reference
+    - Replace with narrative text that tells the player a crypto miner is running but they need to find which instance
+    - _Requirements: 7.1, 2.1_
+
+- [ ] 10. Implement Timer-Based Scoring
+  - [ ] 10.1 Add game start timestamp to `start_game.sh`
+    - At game start (after briefing), capture current epoch time using `date +%s`
+    - Write the start timestamp to a shared temp file (e.g., `/tmp/iam_game_start_time`)
+    - _Requirements: 5.1_
+
+  - [ ] 10.2 Implement scoring logic in `verify.sh` on final level completion
+    - On Level 3 success (before or after the "Promoted to Senior SRE" message), read the start timestamp from the temp file
+    - Calculate elapsed time: `current_time - start_time`
+    - Display a grade based on elapsed time:
+      - Under 2 minutes (120s): "🏆 Grade: Senior SRE — You crushed it!"
+      - Under 5 minutes (300s): "✅ Grade: Junior SRE — Not bad, but room to improve."
+      - Over 5 minutes: "🔥 Grade: FIRED — Too slow, the company went bankrupt."
+    - Display the total elapsed time in a human-readable format (e.g., "Time: 3m 42s")
+    - _Requirements: 7.4_
+
+  - [ ] 10.3 Add timer display alongside Bankrupt Counter
+    - Modify the Bankrupt Counter background loop to also display an elapsed time counter (e.g., "⏱ 01:23") near the bankrupt amount
+    - Use ANSI cursor positioning to render the timer at a fixed position (e.g., row 2, column 70)
+    - The timer reads from the start timestamp temp file to calculate elapsed seconds
+    - _Requirements: 5.2, 5.3_
+
+  - [ ]* 10.4 Write unit tests for scoring logic
+    - Test that elapsed time < 120s returns "Senior SRE" grade
+    - Test that elapsed time between 120s and 300s returns "Junior SRE" grade
+    - Test that elapsed time > 300s returns "FIRED" grade
+    - Test edge cases at exact boundaries (120s, 300s)
+    - _Requirements: 7.4_
+
+- [ ] 11. Integration checkpoint for new features
+  - [ ] 11.1 Wire hint system into game flow
+    - Ensure `hint.sh` is executable and accessible from the game root directory
+    - Verify that using a hint correctly accelerates the Bankrupt Counter in real time
+    - Add `hint.sh` to the game file listing/documentation
+    - _Requirements: 8.2, 8.3_
+
+  - [ ] 11.2 Validate instance discovery flow end-to-end
+    - Confirm `setup.py` no longer leaks the instance ID
+    - Verify that `aws ec2 describe-instances --endpoint-url=http://localhost:4566` returns the rogue instance
+    - Ensure Level 1 verification still works correctly after the player discovers and terminates the instance
+    - _Requirements: 1.2, 2.1, 2.2, 2.3_
+
+  - [ ] 11.3 Validate timer and scoring end-to-end
+    - Confirm start timestamp is written correctly at game start
+    - Verify elapsed time displays correctly during gameplay
+    - Confirm final grade is displayed on Level 3 completion
+    - _Requirements: 5.1, 7.4_
+
+- [ ] 12. Final checkpoint for all features
+  - Ensure all tests pass, ask the user if questions arise.
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -169,6 +259,10 @@ Implement a terminal-based AWS CLI escape room game with three security incident
 - The game uses Python 3 + boto3 for game logic and Bash for terminal rendering
 - LocalStack must be running in Docker on port 4566 for setup and level 1/2 verification to work
 - All file paths are relative to the `iam-in-trouble/` game root directory
+- Tasks 8-12 implement three high-impact upgrades: Hint System with Cost, Instance ID Discovery, and Timer-Based Scoring
+- The hint system uses a shared temp file (`/tmp/iam_bankrupt_rate`) for IPC between `hint.sh` and the Bankrupt Counter
+- Instance ID discovery removes the "training wheels" — players must use `aws ec2 describe-instances` to find the rogue instance
+- Timer-based scoring uses a shared temp file (`/tmp/iam_game_start_time`) to track elapsed gameplay time
 
 ## Task Dependency Graph
 
@@ -182,7 +276,11 @@ Implement a terminal-based AWS CLI escape room game with three security incident
     { "id": 4, "tasks": ["3.5", "3.6", "3.7", "3.8"] },
     { "id": 5, "tasks": ["5.2", "5.3", "5.4"] },
     { "id": 6, "tasks": ["5.5", "6.1"] },
-    { "id": 7, "tasks": ["6.2"] }
+    { "id": 7, "tasks": ["6.2"] },
+    { "id": 8, "tasks": ["8.1", "9.1", "10.1"] },
+    { "id": 9, "tasks": ["8.2", "9.2", "9.3", "10.2"] },
+    { "id": 10, "tasks": ["8.3", "10.3", "10.4"] },
+    { "id": 11, "tasks": ["11.1", "11.2", "11.3"] }
   ]
 }
 ```
