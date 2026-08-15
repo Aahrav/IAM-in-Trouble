@@ -1,80 +1,11 @@
 #!/bin/bash
 # ============================================================
 # start_game.sh — IAM In Trouble: The Grand Opening
-# Clean, simple. Timer prints alert lines every 5 seconds.
-# Scrolling works. Everything works.
+# Uses box_ln helper for perfect alignment.
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-# ---- Colors & Styles ----
-RED='\033[1;31m'
-DARK_RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[1;32m'
-CYAN='\033[1;36m'
-WHITE='\033[1;37m'
-MAGENTA='\033[1;35m'
-DIM='\033[2m'
-BOLD='\033[1m'
-RESET='\033[0m'
-BG_RED='\033[41m'
-
-W=58
-
-box_top()    { echo -e "  ${1}+$(printf '%0.s-' $(seq 1 $W))+${RESET}" ; }
-box_bottom() { echo -e "  ${1}+$(printf '%0.s-' $(seq 1 $W))+${RESET}" ; }
-box_line()   {
-    local color="$1"
-    local text="$2"
-    local visible_len=${#text}
-    local pad=$((W - visible_len))
-    if [ $pad -lt 0 ]; then pad=0; fi
-    echo -e "  ${color}|${RESET}${text}$(printf '%*s' $pad '')${color}|${RESET}"
-}
-
-typewriter_color() {
-    local color="$1"
-    local text="$2"
-    local delay="${3:-0.02}"
-    printf "${color}"
-    for ((i=0; i<${#text}; i++)); do
-        printf "%s" "${text:$i:1}"
-        sleep "$delay"
-    done
-    printf "${RESET}\n"
-}
-
-slow_print() {
-    echo -e "$1"
-    sleep "${2:-0.3}"
-}
-
-spinner() {
-    local msg="$1"
-    local duration="${2:-2}"
-    local spin_chars='|/-\'
-    local end_time=$((SECONDS + duration))
-    while [ $SECONDS -lt $end_time ]; do
-        for ((i=0; i<${#spin_chars}; i++)); do
-            printf "\r  ${CYAN}[${spin_chars:$i:1}]${RESET} ${msg}"
-            sleep 0.15
-        done
-    done
-    printf "\r  ${GREEN}[+]${RESET} ${msg}\n"
-}
-
-pulse_text() {
-    local text="$1"
-    local times="${2:-3}"
-    for ((t=0; t<times; t++)); do
-        printf "\r${RED}${BOLD}  %s${RESET}" "$text"
-        sleep 0.3
-        printf "\r${DARK_RED}  %s${RESET}" "$text"
-        sleep 0.3
-    done
-    printf "\r${RED}${BOLD}  %s${RESET}\n" "$text"
-}
+source "${SCRIPT_DIR}/ui_helpers.sh"
 
 # ---- Clear ----
 clear
@@ -91,21 +22,35 @@ printf '\a'
 
 # ---- PagerDuty Alert ----
 echo -e "${BG_RED}${WHITE}${BOLD}"
-box_top ""
-box_line "" "                                                          "
-box_line "" "   ######   #####   ###### ####### ######                "
-box_line "" "   ##   ## ##   ## ##      ##      ##   ##               "
-box_line "" "   ######  ####### ## #### #####   ######                "
-box_line "" "   ##      ##   ## ##   ## ##      ##  ##                "
-box_line "" "   ##      ##   ##  ###### ####### ##   ##               "
-box_line "" "                                                          "
-box_line "" "          ######  ##   ## ######## ##   ##               "
-box_line "" "          ##   ## ##   ##    ##     ## ##                "
-box_line "" "          ##   ## ##   ##    ##      ###                 "
-box_line "" "          ##   ## ##   ##    ##      ##                  "
-box_line "" "          ######   #####     ##      ##                  "
-box_line "" "                                                          "
-box_bottom ""
+echo "  ╔${BOX_BORDER}╗"
+sleep 0.05
+echo "  ║                                                          ║"
+sleep 0.05
+echo "  ║   ######   #####   ###### ####### ######                ║"
+sleep 0.05
+echo "  ║   ##   ## ##   ## ##      ##      ##   ##               ║"
+sleep 0.05
+echo "  ║   ######  ####### ## #### #####   ######                ║"
+sleep 0.05
+echo "  ║   ##      ##   ## ##   ## ##      ##  ##                ║"
+sleep 0.05
+echo "  ║   ##      ##   ##  ###### ####### ##   ##               ║"
+sleep 0.05
+echo "  ║                                                          ║"
+sleep 0.05
+echo "  ║          ######  ##   ## ######## ##   ##               ║"
+sleep 0.05
+echo "  ║          ##   ## ##   ##    ##     ## ##                ║"
+sleep 0.05
+echo "  ║          ##   ## ##   ##    ##      ###                 ║"
+sleep 0.05
+echo "  ║          ##   ## ##   ##    ##      ##                  ║"
+sleep 0.05
+echo "  ║          ######   #####     ##      ##                  ║"
+sleep 0.05
+echo "  ║                                                          ║"
+sleep 0.05
+echo "  ╚${BOX_BORDER}╝"
 echo -e "${RESET}"
 sleep 0.3
 printf '\a'
@@ -117,12 +62,12 @@ echo ""
 sleep 0.5
 
 box_top "$DIM"
-box_line "$DIM" "  Timestamp:  $(date '+%Y-%m-%d') 02:00:00 UTC"
-box_line "$DIM" "  Source:     AWS CloudTrail / GuardDuty"
-box_line "$DIM" "  Account:    prod-main (****-****-7291)"
-box_line "$DIM" "  Severity:   CRITICAL -- Unauthorized API Activity"
-box_line "$DIM" "  Status:     UNRESOLVED"
-box_bottom "$DIM"
+box_ln "$DIM" "  Timestamp:  $(date '+%Y-%m-%d') 02:00:00 UTC"
+box_ln "$DIM" "  Source:     AWS CloudTrail / GuardDuty"
+box_ln "$DIM" "  Account:    prod-main (****-****-7291)"
+box_ln "$DIM" "  Severity:   CRITICAL -- Unauthorized API Activity"
+box_ln "$DIM" "  Status:     UNRESOLVED"
+box_bot "$DIM"
 echo ""
 sleep 1
 
@@ -136,7 +81,6 @@ pulse_text "[WARNING] BILLING ANOMALY -- COST ACCUMULATOR STARTING..."
 echo ""
 sleep 0.5
 
-# Launch ticker in background (prints alert lines every 5 sec)
 bash "${SCRIPT_DIR}/bankrupt_counter.sh" &
 TICKER_PID=$!
 echo $TICKER_PID > /tmp/iam_ticker_pid
@@ -146,20 +90,20 @@ sleep 1
 
 # ---- Mission Panel ----
 box_top "$GREEN"
-box_line "$GREEN" " [TARGET] Secure account before bankruptcy"
-box_top "$GREEN"
-box_line "$GREEN" ""
-box_line "$GREEN" "  [ ] Level 1: Terminate crypto-miner (p4d.24xlarge)"
-box_line "$GREEN" "  [ ] Level 2: Revoke public S3 access"
-box_line "$GREEN" "  [ ] Level 3: Remove attacker IAM Deny policy"
-box_line "$GREEN" ""
-box_top "$GREEN"
-box_line "$GREEN" "  Verify:   ./verify.sh <level>"
-box_line "$GREEN" "  Endpoint: --endpoint-url=http://localhost:4566"
-box_bottom "$GREEN"
+box_ln "$GREEN" " [TARGET] Secure account before bankruptcy"
+box_mid "$GREEN"
+box_ln "$GREEN" ""
+box_ln "$GREEN" "  [ ] Level 1: Terminate crypto-miner (p4d.24xlarge)"
+box_ln "$GREEN" "  [ ] Level 2: Revoke public S3 access"
+box_ln "$GREEN" "  [ ] Level 3: Remove attacker IAM Deny policy"
+box_ln "$GREEN" ""
+box_mid "$GREEN"
+box_ln "$GREEN" "  Verify:   ./verify.sh <level>" "  Verify:   ${CYAN}./verify.sh <level>${RESET}"
+box_ln "$GREEN" "  Endpoint: --endpoint-url=http://localhost:4566" "  Endpoint: ${CYAN}--endpoint-url=http://localhost:4566${RESET}"
+box_bot "$GREEN"
 echo ""
 echo -e "  ${RED}${BOLD}[!] The money is draining. Every second counts.${RESET}"
-echo -e "  ${DIM}  Cost alerts will appear every 5 seconds as a reminder.${RESET}"
+echo -e "  ${DIM}  Cost alerts will flash every 5 seconds. Move fast.${RESET}"
 echo ""
-echo -e "  ${DIM}$(printf '%0.s-' $(seq 1 $W))${RESET}"
+echo -e "  ${DIM}${BOX_BORDER}${RESET}"
 echo ""
