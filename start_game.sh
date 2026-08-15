@@ -1,9 +1,8 @@
 #!/bin/bash
 # ============================================================
-# start_game.sh — IAM In Trouble: Neovim-style TUI
-# Fixed status bar at top (row 0) that never scrolls.
-# Content below scrolls normally.
-# Uses terminal scroll regions (CSR).
+# start_game.sh — IAM In Trouble: The Grand Opening
+# Clean, simple. Timer prints alert lines every 5 seconds.
+# Scrolling works. Everything works.
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -17,13 +16,22 @@ CYAN='\033[1;36m'
 WHITE='\033[1;37m'
 MAGENTA='\033[1;35m'
 DIM='\033[2m'
-BLINK='\033[5m'
 BOLD='\033[1m'
 RESET='\033[0m'
 BG_RED='\033[41m'
-BG_BLUE='\033[44m'
 
-# ---- Utility Functions ----
+W=58
+
+box_top()    { echo -e "  ${1}+$(printf '%0.s-' $(seq 1 $W))+${RESET}" ; }
+box_bottom() { echo -e "  ${1}+$(printf '%0.s-' $(seq 1 $W))+${RESET}" ; }
+box_line()   {
+    local color="$1"
+    local text="$2"
+    local visible_len=${#text}
+    local pad=$((W - visible_len))
+    if [ $pad -lt 0 ]; then pad=0; fi
+    echo -e "  ${color}|${RESET}${text}$(printf '%*s' $pad '')${color}|${RESET}"
+}
 
 typewriter_color() {
     local color="$1"
@@ -47,7 +55,6 @@ spinner() {
     local duration="${2:-2}"
     local spin_chars='|/-\'
     local end_time=$((SECONDS + duration))
-    
     while [ $SECONDS -lt $end_time ]; do
         for ((i=0; i<${#spin_chars}; i++)); do
             printf "\r  ${CYAN}[${spin_chars:$i:1}]${RESET} ${msg}"
@@ -69,22 +76,8 @@ pulse_text() {
     printf "\r${RED}${BOLD}  %s${RESET}\n" "$text"
 }
 
-# ---- Setup the TUI layout ----
+# ---- Clear ----
 clear
-
-COLS=$(tput cols 2>/dev/null || echo 80)
-ROWS=$(tput lines 2>/dev/null || echo 24)
-
-# Draw the initial fixed status bar at row 0
-tput cup 0 0
-printf "${BG_BLUE}${WHITE}${BOLD}%-${COLS}s${RESET}" " [IAM IN TROUBLE]  ACTIVE INCIDENT                           COST: \$32.50 lost | TIME: 00:00 "
-
-# Set the scroll region: rows 2 to bottom (row 0 = bar, row 1 = separator)
-# This makes ONLY rows 2..ROWS scroll. Row 0 stays fixed.
-printf "\033[2;${ROWS}r"
-
-# Move cursor to the scrollable area (row 2)
-tput cup 2 0
 
 # ---- Boot Sequence ----
 echo ""
@@ -94,59 +87,56 @@ spinner "Connecting to AWS CloudTrail" 1
 spinner "Decrypting alert payload" 1
 echo ""
 sleep 0.5
-
 printf '\a'
 
 # ---- PagerDuty Alert ----
 echo -e "${BG_RED}${WHITE}${BOLD}"
-slow_print "  +====================================================================+" 0.05
-slow_print "  |                                                                    |" 0.02
-slow_print "  |     ######   #####   ###### ####### ######                         |" 0.03
-slow_print "  |     ##   ## ##   ## ##      ##      ##   ##                        |" 0.03
-slow_print "  |     ######  ####### ## #### #####   ######                         |" 0.03
-slow_print "  |     ##      ##   ## ##   ## ##      ##  ##                         |" 0.03
-slow_print "  |     ##      ##   ##  ######  ####### ##   ##                       |" 0.03
-slow_print "  |                                                                    |" 0.02
-slow_print "  |              ######  ##   ## ######## ##    ##                      |" 0.03
-slow_print "  |              ##   ## ##   ##    ##     ##  ##                       |" 0.03
-slow_print "  |              ##   ## ##   ##    ##      ####                        |" 0.03
-slow_print "  |              ##   ## ##   ##    ##       ##                         |" 0.03
-slow_print "  |              ######   #####     ##       ##                         |" 0.03
-slow_print "  |                                                                    |" 0.02
-slow_print "  +====================================================================+" 0.05
+box_top ""
+box_line "" "                                                          "
+box_line "" "   ######   #####   ###### ####### ######                "
+box_line "" "   ##   ## ##   ## ##      ##      ##   ##               "
+box_line "" "   ######  ####### ## #### #####   ######                "
+box_line "" "   ##      ##   ## ##   ## ##      ##  ##                "
+box_line "" "   ##      ##   ##  ###### ####### ##   ##               "
+box_line "" "                                                          "
+box_line "" "          ######  ##   ## ######## ##   ##               "
+box_line "" "          ##   ## ##   ##    ##     ## ##                "
+box_line "" "          ##   ## ##   ##    ##      ###                 "
+box_line "" "          ##   ## ##   ##    ##      ##                  "
+box_line "" "          ######   #####     ##      ##                  "
+box_line "" "                                                          "
+box_bottom ""
 echo -e "${RESET}"
-
 sleep 0.3
 printf '\a'
 
 # ---- Alert Details ----
 echo ""
-echo -e "  ${BG_RED}${WHITE}${BOLD} [!!!] SEVERITY: P1 -- CRITICAL SECURITY BREACH [!!!] ${RESET}"
+echo -e "  ${BG_RED}${WHITE}${BOLD} [!!!] SEVERITY P1 -- CRITICAL SECURITY BREACH [!!!] ${RESET}"
 echo ""
 sleep 0.5
 
-typewriter_color "$DIM" "  +-----------------------------------------------------------+" 0.01
-echo -e "  ${DIM}|${RESET}  ${YELLOW}Timestamp:${WHITE}    $(date '+%Y-%m-%d') 02:00:00 UTC              ${DIM}|${RESET}"
-echo -e "  ${DIM}|${RESET}  ${YELLOW}Source:${WHITE}       AWS CloudTrail / GuardDuty              ${DIM}|${RESET}"
-echo -e "  ${DIM}|${RESET}  ${YELLOW}Account:${WHITE}     prod-main (****-****-7291)               ${DIM}|${RESET}"
-echo -e "  ${DIM}|${RESET}  ${YELLOW}Severity:${WHITE}     ${RED}CRITICAL${WHITE} -- Unauthorized API Activity    ${DIM}|${RESET}"
-echo -e "  ${DIM}|${RESET}  ${YELLOW}Status:${WHITE}       ${RED}UNRESOLVED${RESET}                                 ${DIM}|${RESET}"
-typewriter_color "$DIM" "  +-----------------------------------------------------------+" 0.01
+box_top "$DIM"
+box_line "$DIM" "  Timestamp:  $(date '+%Y-%m-%d') 02:00:00 UTC"
+box_line "$DIM" "  Source:     AWS CloudTrail / GuardDuty"
+box_line "$DIM" "  Account:    prod-main (****-****-7291)"
+box_line "$DIM" "  Severity:   CRITICAL -- Unauthorized API Activity"
+box_line "$DIM" "  Status:     UNRESOLVED"
+box_bottom "$DIM"
 echo ""
-
 sleep 1
 
-# ---- Run Briefing ----
+# ---- Briefing ----
 source "${SCRIPT_DIR}/briefing.sh"
-
 sleep 1
 
-# ---- Start the Bankrupt Counter (updates the fixed bar) ----
+# ---- Start Ticker ----
 echo ""
-pulse_text "[WARNING] BILLING ANOMALY DETECTED -- COST ACCUMULATOR STARTING..."
+pulse_text "[WARNING] BILLING ANOMALY -- COST ACCUMULATOR STARTING..."
 echo ""
 sleep 0.5
 
+# Launch ticker in background (prints alert lines every 5 sec)
 bash "${SCRIPT_DIR}/bankrupt_counter.sh" &
 TICKER_PID=$!
 echo $TICKER_PID > /tmp/iam_ticker_pid
@@ -155,21 +145,21 @@ echo $SECONDS > /tmp/iam_start_time
 sleep 1
 
 # ---- Mission Panel ----
-echo -e "  ${GREEN}+====================================================================+${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${WHITE}${BOLD}[TARGET] Secure the AWS account before the company goes bankrupt${RESET}  ${GREEN}|${RESET}"
-echo -e "  ${GREEN}+====================================================================+${RESET}"
-echo -e "  ${GREEN}|${RESET}                                                                    ${GREEN}|${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${WHITE}[ ] Level 1:${RESET} ${YELLOW}Terminate the crypto-miner (p4d.24xlarge)${RESET}          ${GREEN}|${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${WHITE}[ ] Level 2:${RESET} ${YELLOW}Revoke public S3 access${RESET}                           ${GREEN}|${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${WHITE}[ ] Level 3:${RESET} ${YELLOW}Remove attacker IAM Deny policy${RESET}                    ${GREEN}|${RESET}"
-echo -e "  ${GREEN}|${RESET}                                                                    ${GREEN}|${RESET}"
-echo -e "  ${GREEN}+--------------------------------------------------------------------+${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${DIM}Verify each fix:${RESET} ${CYAN}./verify.sh <level>${RESET}                              ${GREEN}|${RESET}"
-echo -e "  ${GREEN}|${RESET}  ${DIM}AWS endpoint:${RESET}   ${CYAN}--endpoint-url=http://localhost:4566${RESET}               ${GREEN}|${RESET}"
-echo -e "  ${GREEN}+====================================================================+${RESET}"
+box_top "$GREEN"
+box_line "$GREEN" " [TARGET] Secure account before bankruptcy"
+box_top "$GREEN"
+box_line "$GREEN" ""
+box_line "$GREEN" "  [ ] Level 1: Terminate crypto-miner (p4d.24xlarge)"
+box_line "$GREEN" "  [ ] Level 2: Revoke public S3 access"
+box_line "$GREEN" "  [ ] Level 3: Remove attacker IAM Deny policy"
+box_line "$GREEN" ""
+box_top "$GREEN"
+box_line "$GREEN" "  Verify:   ./verify.sh <level>"
+box_line "$GREEN" "  Endpoint: --endpoint-url=http://localhost:4566"
+box_bottom "$GREEN"
 echo ""
-echo -e "  ${RED}${BOLD}  [!] The money is draining. Every second counts.${RESET}"
-echo -e "  ${DIM}  Type your AWS CLI commands below to save the company.${RESET}"
+echo -e "  ${RED}${BOLD}[!] The money is draining. Every second counts.${RESET}"
+echo -e "  ${DIM}  Cost alerts will appear every 5 seconds as a reminder.${RESET}"
 echo ""
-echo -e "  ${DIM}----------------------------------------------------------------------${RESET}"
+echo -e "  ${DIM}$(printf '%0.s-' $(seq 1 $W))${RESET}"
 echo ""

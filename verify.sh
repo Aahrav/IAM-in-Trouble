@@ -121,14 +121,10 @@ if [ $RESULT -eq 0 ]; then
         fi
         kill $! 2>/dev/null
         
-        # Clear the fixed status bar and reset scroll region
-        COLS=$(tput cols 2>/dev/null || echo 80)
-        ROWS=$(tput lines 2>/dev/null || echo 24)
-        printf "\033[1;${ROWS}r"
-        tput sc
-        tput cup 0 0
-        printf "%${COLS}s" ""
-        tput rc
+        # Reset prompt and cleanup
+        rm -f /tmp/iam_cost /tmp/iam_elapsed
+        unset PROMPT_COMMAND 2>/dev/null
+        export PS1="\[\033[1;32m\][SECURED]\[\033[0m\] \w\$ "
         
         # Calculate elapsed time
         if [ -f /tmp/iam_start_time ]; then

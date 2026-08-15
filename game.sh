@@ -75,18 +75,14 @@ stop)
         fi
         rm -f /tmp/iam_ticker_pid
     else
-        pkill -f bankrupt_counter 2>/dev/null
+        pkill -f _iam_ticker_bg 2>/dev/null
         echo -e "  ${DIM}  No active ticker PID found, cleaned up strays${RESET}"
     fi
     
-    # Clear the ticker line and reset scroll region
-    COLS=$(tput cols 2>/dev/null || echo 80)
-    ROWS=$(tput lines 2>/dev/null || echo 24)
-    printf "\033[1;${ROWS}r"
-    tput sc
-    tput cup 0 0
-    printf "%${COLS}s" ""
-    tput rc
+    # Reset prompt
+    rm -f /tmp/iam_cost /tmp/iam_elapsed
+    unset PROMPT_COMMAND 2>/dev/null
+    printf "\033]0;Terminal\007"
     
     # Show session summary
     echo ""
